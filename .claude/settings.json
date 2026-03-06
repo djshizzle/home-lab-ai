@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status)",
+      "Bash(git show *)",
+      "Bash(git grep *)",
+      "Bash(ls *)",
+      "Bash(find * -not -name '*.env')",
+      "Read(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo rm *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(curl * | sh)",
+      "Bash(chmod 777 *)"
+    ]
+  }
+}

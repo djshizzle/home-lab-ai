@@ -1,0 +1,38 @@
+# Agent workspace — keep directory structure, but ignore generated session files
+# (research findings, plans, reviews are session-specific; commit selectively)
+.claude/workspace/research/*.md
+.claude/workspace/plans/*.md
+.claude/workspace/reviews/*.md
+.claude/workspace/docs-drafts/*.md
+.claude/workspace/pr-description.md
+
+# Keep the directory structure and state template
+!.claude/workspace/AGENT_STATE.md
+!.claude/workspace/**/.gitkeep
+
+# Common project ignores — ADD YOUR PROJECT'S ENTRIES BELOW
+# [CUSTOMIZE] e.g., for Python:
+# __pycache__/
+# *.pyc
+# .venv/
+# dist/
+# *.egg-info/
+
+# [CUSTOMIZE] e.g., for Node.js:
+# node_modules/
+# dist/
+# .env
+# .env.local
+
+# [CUSTOMIZE] e.g., for Go:
+# bin/
+# *.exe
+
+# Never commit secrets
+.env
+.env.*
+*.pem
+*.key
+secrets.*
+credentials.*
+service-account*.json
