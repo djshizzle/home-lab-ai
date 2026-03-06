@@ -36,3 +36,6 @@
 secrets.*
 credentials.*
 service-account*.json
+
+# Agent team hand-off workspace (session-specific, not committed)
+.agent-workspace/
