@@ -1,15 +1,26 @@
-# Workflow: Standard Feature Development
+# Workflow: Standard Feature Development — AVops
 
-> Use this workflow when adding a new feature, enhancement, or significant change.
+> Use this workflow when adding a new software feature, automation script, API endpoint,
+> monitoring integration, or significant enhancement to the AVops platform.
 > All 7 agents are involved. Estimated sessions: 1 (simple) to 3 (complex features).
+>
+> AV-specific features examples:
+> - New device driver (REST, TCP, RS-232)
+> - REST API endpoint for device control or monitoring
+> - Automation script (firmware audit, mass reboot, inventory sync)
+> - SNMP monitoring integration for a new device class
+> - UC platform API integration (Teams, Zoom, Webex)
+> - Dashboard or reporting feature for AV estate health
 
 ---
 
 ## Prerequisites
 
 - [ ] `.agent-workspace/` directory exists (run `./scripts/init-agent-team.sh` if not)
-- [ ] `CLAUDE.md` is customized for this project
+- [ ] `CLAUDE.md` is loaded (contains AV device scope and tech stack)
 - [ ] User has provided a clear task description
+- [ ] For device drivers: target device model, firmware version, and API docs are known
+- [ ] For API features: authentication requirements and rate limits are known
 
 ---
 
@@ -193,6 +204,14 @@
 ```
 
 ---
+
+## AV-Specific Notes for Standard Features
+
+- **Device drivers**: always inherit `DeviceBase`, set `API_RATE_LIMIT`, use env vars for credentials
+- **API endpoints**: reboot/reset device endpoints require admin role (not helpdesk)
+- **Automation scripts**: include `--dry-run` flag for scripts that modify AV device state
+- **Monitoring integrations**: validate SNMP OIDs against actual device MIB before implementing
+- **Control system code**: always include startup timing delays (see Implementer agent rules)
 
 ## Rollback Plan
 

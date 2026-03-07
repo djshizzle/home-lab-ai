@@ -1,8 +1,21 @@
-# Workflow: Bug Fix
+# Workflow: Bug Fix — AVops
 
-> Use this workflow for fixing a specific bug, regression, or unexpected behavior.
+> Use this workflow for fixing a specific software bug, configuration defect, or
+> regression in the AVops codebase (device drivers, API, automation scripts, room configs).
+>
+> ⚠ For ACTIVE INCIDENTS (room down, meeting impacted), use workflows/incident-response.md instead.
+> This workflow is for non-urgent bugs discovered during testing, code review, or reported
+> as P3/P4 issues with no immediate meeting impact.
+>
 > Streamlined: skips Planner (direct research-to-fix) and Documenter (unless API changes).
 > Agents: Orchestrator → Researcher → Implementer → Tester → Reviewer
+>
+> AV-specific bug examples:
+> - Device driver returns wrong status field
+> - Room config YAML fails schema validation
+> - Q-SYS Lua script missing startup delay (causing intermittent audio drop)
+> - API rate limit not respected in retry loop
+> - SNMP polling returns stale data due to caching bug
 
 ---
 
@@ -62,11 +75,13 @@
          If not: re-run Researcher with additional context from findings
 ```
 
-**Key research questions for bugs:**
+**Key research questions for AV bugs:**
 1. Where exactly does the bug occur? (file, function, line)
-2. What is the root cause? (logic error, missing validation, race condition, etc.)
-3. Were there existing tests that should have caught this?
-4. Are there other places in the codebase with the same bug pattern?
+2. What is the root cause? (logic error, missing validation, race condition, firmware API change?)
+3. Is the bug firmware-version specific? (device may need firmware update, not code fix)
+4. Were there existing tests that should have caught this?
+5. Are there other device drivers or rooms with the same bug pattern?
+6. Is this a known vendor issue with a documented workaround?
 
 **Research output:** `.agent-workspace/research-findings.md`
 
@@ -187,7 +202,7 @@
 
 ## Fast Path: Tiny Bugs
 
-For obvious one-line fixes (typo, wrong constant, missing null check):
+For obvious one-line fixes (typo, wrong constant, missing null check, wrong OID):
 
 ```
 1. Orchestrator verifies the fix with Researcher (quick scan)
@@ -198,3 +213,15 @@ For obvious one-line fixes (typo, wrong constant, missing null check):
 ```
 
 Use judgment: if the fix is < 5 lines and the root cause is obvious, don't over-process.
+
+## AV Bug Fix Notes
+
+- **Firmware API changes**: if a device driver is broken because the device firmware changed
+  its API, use the firmware-rollout workflow to align firmware versions first, then fix the driver.
+- **Room config bugs**: always validate with `python scripts/validate_room_configs.py` after fix.
+- **Control system bugs**: Crestron/Q-SYS changes require compile check before pushing;
+  never deploy uncompiled control system code.
+- **Dante bugs**: Dante routing issues may require Dante Controller action in addition to code fix.
+  Document both in the fix summary.
+- **Update troubleshooting runbook**: after every bug fix, add an entry to
+  `docs/runbooks/{room}-troubleshooting.md` so the next technician can resolve it faster.
