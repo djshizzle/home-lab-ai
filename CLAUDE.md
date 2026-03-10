@@ -1,223 +1,210 @@
-# CLAUDE.md — AVops Agent Team
+# CLAUDE.md
 
-> This file is automatically loaded by Claude Code every session.
-> Customized for enterprise AV Builds & AVops support.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
 
 ## Project Identity
 
-```
-PROJECT_NAME:    avops-agent-team
-PURPOSE:         Enterprise AV device management, configuration, monitoring, and
-                 support automation using a 7-Agent AI architecture. Covers all
-                 AV devices across conference rooms, event spaces, digital signage,
-                 broadcast, and AVoIP infrastructure.
-TECH_STACK:      Python 3.12 / FastAPI / PostgreSQL / REST APIs / SNMP /
-                 Crestron SIMPL+ / Q-SYS Designer / Extron GCP / Dante / NDI /
-                 Microsoft Teams Rooms / Zoom Rooms / Cisco Webex
-REPO_URL:        https://github.com/your-org/avops-agent-team
-TEAM:            av-engineering
-```
+AVops Webex Support Agents — a 7-agent Claude AI pipeline that receives AV support requests from Webex, triages them, runs them through a sequenced agent workflow, and posts resolutions back to the requester. State is persisted to AWS (DynamoDB, S3, SQS).
+
+**Stack:** Python 3.12 · FastAPI · Anthropic Claude API · AWS (DynamoDB / S3 / SQS / Secrets Manager) · React/Vite frontend · Docker Compose + LocalStack for local dev
 
 ---
 
-## AV Device Scope
-
-This system manages and supports all enterprise AV categories:
-
-| Category | Examples |
-|----------|----------|
-| Control Systems | Crestron CP4, AMX NX-3200, QSC Core 110f |
-| DSP / Audio | Biamp Tesira, QSC Q-SYS, Shure IntelliMix |
-| Video Switching | Crestron DM, Extron XTP, Kramer VS |
-| Displays / Projectors | Samsung IFP, LG DVLED, Sony Laser, Epson |
-| Video Conferencing | Poly Studio X, Cisco Board, Neat Bar, Logitech Rally |
-| AVoIP | Crestron NVX, Extron NAV, ZeeVee, Lightware |
-| Amplifiers | Crown XLS, QSC GX, Lab.gruppen |
-| Signal Distribution | Extron DTP, HDBaseT, HDMI 2.0, SDI |
-| Room Scheduling | Crestron TSS, Robin, Joan, Neat Pad |
-| Digital Signage | BrightSign, Appspace, ScreenCloud, Scala |
-| Unified Comms | MTR, Zoom Rooms, Teams Panels, Cisco Webex |
-| Streaming | Epiphan, AJA, Blackmagic, vMix, OBS |
-
----
-
-## Quick Commands
+## Commands
 
 ```bash
-# Install Python dependencies
-install:    pip install -e ".[dev]"
+# Install (includes dev extras: pytest, ruff, moto, mypy)
+pip install -e ".[dev]"
 
-# Run tests
-test:       pytest -x -v tests/
+# Run API locally (hot-reload)
+uvicorn avops.main:app --reload --port 8080
+
+# Run with LocalStack (full AWS stack locally)
+docker compose up -d
+
+# Tests
+pytest -x -v tests/                      # all tests
+pytest tests/unit/test_triage.py -v      # single file
+pytest -k "test_classify_intent" -v      # single test
 
 # Lint / format
-lint:       ruff check . && ruff format --check .
+ruff check . && ruff format --check .
+ruff format .                            # auto-fix formatting
 
-# Build
-build:      python -m build
+# Type check
+mypy avops/
 
-# Run AVops API locally
-dev:        uvicorn avops.main:app --reload --port 8080
+# Create AWS resources (after CDK deploy or LocalStack up)
+python scripts/init_aws_resources.py
 
-# Device connectivity check
-ping-devices:   python scripts/ping_all_devices.py
-
-# Sync device inventory
-sync-inventory: python scripts/sync_inventory.py --env production
-
-# Run firmware audit
-firmware-audit: python scripts/firmware_audit.py --report
+# Generate plan PDF
+python scripts/generate_pdf.py docs/AVops-AWS-Security-Plan.pdf
 ```
 
 ---
 
-## Agent Team
+## Architecture
 
-This project uses a **7-Agent Architecture** tuned for AV enterprise operations.
-See the full guide: → [AGENT-TEAM-SETUP.md](./AGENT-TEAM-SETUP.md)
+### Request flow
 
-### Agent Roster
+```
+Webex message
+    │  POST /api/webex/webhook
+    ▼
+avops/webex/bot.py  handle_webhook_event()
+    │  1. Fetch full message via Webex API
+    │  2. triage.py: keyword classify intent + priority
+    │  3. TicketStore.create() → DynamoDB
+    │  4. send_ack() back to Webex
+    │  5. Enqueue to SQS (or inline fallback in dev)
+    ▼
+avops/agents/orchestrator.py  run_support_workflow()
+    │  Chains 7 agents in sequence; each agent output
+    │  becomes previous_agent_output for the next.
+    │  State tracked in avops-agent-state DynamoDB table.
+    ▼
+avops/webex/client.py  send_resolution()  →  Webex room
+avops/aws/s3.py        LogStore.save_ticket_log()  →  S3
+```
 
-| # | Agent | File | Subagent Type | AV Role |
-|---|-------|------|---------------|---------|
-| 1 | Orchestrator | _(main session)_ | — | Task classifier & coordinator |
-| 2 | Researcher | `agents/02-researcher.md` | `Explore` | Device & codebase discovery |
-| 3 | Planner | `agents/03-planner.md` | `Plan` | AV solution architect |
-| 4 | Implementer | `agents/04-implementer.md` | `general-purpose` | AV code & config writer |
-| 5 | Tester | `agents/05-tester.md` | `general-purpose` | Device & integration validator |
-| 6 | Reviewer | `agents/06-reviewer.md` | `general-purpose` | AV security & quality auditor |
-| 7 | Documenter | `agents/07-documenter.md` | `general-purpose` | As-built & PR writer |
+### Agent pipeline (`avops/agents/`)
 
-### Workflows
+| File | Purpose |
+|------|---------|
+| `base.py` | `BaseAgent` — wraps Anthropic streaming API with tenacity retry (3 attempts, exponential backoff). All agents extend this. |
+| `team.py` | 7 concrete agent classes (Orchestrator through Documenter). Each calls `_call(system, user_message)` with its role-specific system prompt. |
+| `prompts.py` | All 7 system prompts as module-level constants. |
+| `orchestrator.py` | `run_support_workflow()` — sequences agents, persists state, handles workflow variants. |
 
-| Task Type | Workflow File |
-|-----------|--------------|
-| New AV feature / integration | `workflows/standard-feature.md` |
-| Bug / device fault fix | `workflows/bug-fix.md` |
-| New device onboarding | `workflows/device-onboarding.md` |
-| Firmware rollout | `workflows/firmware-rollout.md` |
-| Room AV integration | `workflows/room-integration.md` |
-| Incident response | `workflows/incident-response.md` |
-| Code review | `workflows/code-review.md` |
+**Two model tiers** (set in `avops/config.py`):
+- `claude_model` = `claude-sonnet-4-6` — Orchestrator and heavy analysis agents
+- `claude_fast_model` = `claude-haiku-4-5-20251001` — triage/routing agents (`use_fast_model = True` on subclass)
+
+**Workflow routing** (selected in `bot.py._select_workflow()`):
+- `incident-response` — critical priority or `device_offline` intent: skips Planner + Reviewer for speed
+- `firmware-rollout` — full 7-agent pipeline
+- `standard-feature` — default full pipeline
+
+**Agent context propagation:** Each agent receives a dict with `ticket_id`, `intent`, `priority`, `room_id`, `message`, `person_email`, `device_inventory`, and `previous_agent_output`. `_build_context_message()` in `team.py` serialises this to a human-readable string.
+
+**JSON parsing:** `BaseAgent._parse_json()` tries direct parse → extracts from ` ```json ` fence → falls back to raw text. Agents should return JSON; the fallback allows graceful degradation.
+
+### Triage (`avops/webex/triage.py`)
+
+Fast keyword-based pre-classifier that runs before any Claude call:
+- `classify_intent()` — scores keywords from `WEBEX_SUPPORT_INTENTS` (defined in `avops/constants/devices.py`); returns highest-scoring intent or `"general"`
+- `classify_priority()` — `critical` / `high` / `medium` / `low` based on urgency phrases and intent
+- `extract_room_code()` — regex extracts patterns like `conf-3b`, `hq-031`, `3B` from free text
+
+### AWS layer (`avops/aws/`)
+
+| Module | Provides |
+|--------|---------|
+| `client.py` | `get_dynamodb()` / `get_s3()` / `get_sqs()` — boto3 resource/client singletons respecting `aws_endpoint_url` for LocalStack |
+| `dynamodb.py` | `TicketStore`, `DeviceStore`, `AgentStateStore` — typed CRUD classes |
+| `s3.py` | `LogStore` — ticket transcript archival |
+| `sqs.py` | `AgentTaskQueue` — FIFO enqueue with message dedup |
+| `secrets.py` | `load_secrets_into_env()` — loads Secrets Manager values into `os.environ` at startup; no-op when `use_secrets_manager=False` |
+
+**DynamoDB key schemas:**
+- `avops-support-tickets`: PK=`ticket_id`, SK=`created_at`; GSI1=`webex_room_id+created_at`; GSI2=`status+created_at`
+- `avops-devices`: PK=`device_id`, SK=`room_id`; GSI=`room_id-index`
+- `avops-agent-state`: PK=`ticket_id`, SK=`session_id`
+
+### Configuration (`avops/config.py`)
+
+`Settings` uses `pydantic-settings` loaded from `.env`. `get_settings()` is `@lru_cache` — call it anywhere; **invalidate the cache in tests** with `get_settings.cache_clear()`. Key toggles:
+
+- `use_secrets_manager` — `False` in dev, `True` in staging/prod
+- `enable_auth` — `False` in dev; enables Cognito JWT validation in prod
+- `aws_endpoint_url` — set to `http://localhost:4566` for LocalStack
+
+Copy `.env.example` → `.env` and fill in `WEBEX_BOT_TOKEN`, `ANTHROPIC_API_KEY`, and `WEBEX_WEBHOOK_SECRET` at minimum.
+
+### API routes (`avops/api/routes/`)
+
+- `GET /api/health` — liveness check
+- `POST /api/webex/webhook` — Webex webhook receiver (entry point)
+- `GET/POST /api/tickets` — ticket CRUD for dashboard
+- `GET/POST /api/devices` — device inventory management
+
+### Frontend (`frontend/`)
+
+React + TypeScript + Vite. Served from `frontend/dist/` in production (FastAPI mounts it at `/`). Dev server on port 3000 proxies to the API at 8080 via `VITE_API_BASE`.
+
+### Infrastructure (`infrastructure/cdk/`)
+
+CDK Python stack (`avops_stack.py`) provisions all AWS resources. Deploy with:
+```bash
+cd infrastructure/cdk && cdk deploy -c env=dev -c account=YOUR_ACCOUNT -c region=us-east-1
+```
 
 ---
 
-## Team Norms
+## Testing
 
-- Use `TodoWrite` to track all multi-step tasks; mark complete immediately when done
-- Only **one** task `in_progress` at a time
-- Read files before editing them — never propose changes blindly
-- Prefer editing existing files over creating new ones
-- Do not over-engineer: minimum complexity for the current task
-- Always reference device model + firmware version when reporting issues
-- Never push untested control system code to a live room without a maintenance window
+Tests use `moto` to mock all AWS calls — no real AWS needed for unit tests.
 
-## Security Constraints
+```python
+# Pattern for mocking AWS in tests
+from moto import mock_aws
 
-- **Never** commit secrets, API keys, credentials, or device passwords
-- Always confirm before: `git push --force`, `git reset --hard`, destructive DB ops
-- AV device credentials must use environment variables — never hardcode
-- Validate at system boundaries (user input, device APIs, SNMP); trust internal code
-- Network: AV devices must stay on the AV VLAN — never bridge to corporate LAN
-- Skip `--no-verify` only if the user explicitly requests it
-
-## AV-Specific Constraints
-
-- **Maintenance windows**: Never push control system changes to live rooms during business hours (8am–6pm local) without explicit user approval
-- **Device compatibility**: Always verify firmware version compatibility before deploying config changes
-- **Signal path**: Validate end-to-end signal path (source → switch → display) in test plans
-- **Failover**: All critical systems must have documented manual override procedures
-- **Dante/AES67**: Audio network changes require a Dante Controller lock check before applying
-- **Vendor APIs**: Respect rate limits on device REST APIs (Crestron: 60 req/min, Q-SYS: 30 req/min)
-
-## Git Conventions
-
-```
-Branch naming:   feature/<ticket>-short-description
-                 fix/<ticket>-short-description
-                 device/<ticket>-device-model-action
-                 chore/<ticket>-short-description
-
-Commit format:   <type>(<scope>): <summary>
-                 Types: feat | fix | chore | docs | test | refactor | device | firmware
-
-                 Examples:
-                 feat(avop-123): add Crestron NVX encoder auto-discovery
-                 fix(avop-456): resolve Q-SYS gain ramp on startup
-                 device(avop-789): onboard Poly Studio X50 in conf-room-3b
-                 firmware(avop-101): roll out Extron DMP 128 v3.07 to fleet
-
-PR title:        [<type>] <short summary> (under 70 chars)
+@mock_aws
+def test_something():
+    # moto intercepts all boto3 calls
+    ...
 ```
 
-## Code Style
+`asyncio_mode = "auto"` is set in `pyproject.toml` — all async test functions work without `@pytest.mark.asyncio`.
 
-```
-Language:        Python 3.12 (PEP 8, ruff enforced)
-Max line length: 100
-Import order:    stdlib → third-party → local (isort enforced)
-Naming:          snake_case for Python, UPPER_SNAKE for constants
-                 Device IDs: {building}-{room}-{device_type}-{index}
-                 e.g., hq-conf3b-ctrl-01, hq-conf3b-dsp-01
-
-AV-specific:
-  - Device hostnames follow DNS pattern: av-{building}-{room}-{type}-{n}.internal
-  - Room IDs follow pattern: {building_code}-{floor}{room_number}
-  - Always use device model constants from avops/constants/devices.py
-  - Log all device state changes with device_id, old_state, new_state, timestamp
-```
+Run tests against LocalStack (integration) by setting `AWS_ENDPOINT_URL=http://localhost:4566` in the test environment.
 
 ---
 
-## AV Domain Reference
+## Local Dev with Docker Compose
 
-### Control System Languages
+`docker compose up -d` starts:
+1. **localstack** — DynamoDB, S3, SQS, Secrets Manager on port 4566
+2. **api** — FastAPI on port 8080, `AWS_ENDPOINT_URL` pointed at localstack
+3. **frontend** — Vite dev server on port 3000
 
-| Platform | Language | File Ext | Notes |
-|----------|----------|----------|-------|
-| Crestron | SIMPL+ | `.usp` / `.usl` | Compiled, event-driven |
-| Crestron | C# (SIMPL#) | `.cs` | .NET-based, OOP |
-| Q-SYS | Lua | `.qsys` | Embedded in Designer |
-| Extron | GCP (Python subset) | `.py` | Limited stdlib |
-| AMX | NetLinx | `.axs` | Event-driven |
-| Biamp | CLI / REST | JSON | REST API preferred |
-
-### Key Protocols
-
-```
-RS-232 / RS-485  →  Serial control (displays, projectors, switchers)
-TCP/IP (raw)     →  Crestron CIP, Extron SIS, AMX ICSP
-REST/JSON        →  Modern devices (Q-SYS, Biamp, Cisco, Poly)
-SNMP             →  Monitoring (uptime, temperature, alerts)
-Dante/AES67      →  Audio-over-IP routing and control
-NDI              →  Video-over-IP (NewTek/Vizrt ecosystem)
-HDMI / CEC       →  Display control and power management
-CrestronHome SDK →  UI and scheduling integration
-GraphQL          →  Q-SYS external control API
+After first start, initialise AWS resources:
+```bash
+python scripts/init_aws_resources.py
 ```
 
-### Standard Room Templates
-
-```
-HUDDLE_ROOM      →  1 display, USB camera, USB audio
-CONF_SMALL       →  1-2 displays, PTZ camera, ceiling mic array, DSP
-CONF_MEDIUM      →  2 displays, PTZ camera, ceiling array, DSP, control system
-CONF_LARGE       →  3+ displays, PTZ + wide camera, DSP, control system, room scheduling
-BOARDROOM        →  Video wall, broadcast-grade camera, Q-SYS/Tesira DSP, Crestron control
-EVENT_SPACE      →  Multiple zones, distributed audio, digital signage, IMAG
-BROADCAST_STUDIO →  SDI/NDI production, streaming encoder, intercom
-```
+API docs: `http://localhost:8080/api/docs`
 
 ---
 
 ## Agent Workspace
 
-Hand-off files between agents are stored in `.agent-workspace/` (gitignored).
-Run `./scripts/init-agent-team.sh` to scaffold this directory on first use.
+Inter-agent hand-off files are written to `.agent-workspace/` (gitignored). Scaffold with:
+```bash
+./scripts/init-agent-team.sh
+```
 
-AV-specific workspace files:
-- `.agent-workspace/device-inventory-snapshot.json` — device state at task start
-- `.agent-workspace/signal-path-map.md` — documented signal flow for current task
-- `.agent-workspace/maintenance-window.md` — approved change window details
+Key workspace files:
+- `.agent-workspace/device-inventory-snapshot.json`
+- `.agent-workspace/signal-path-map.md`
+- `.agent-workspace/maintenance-window.md`
+
+---
+
+## Security Constraints
+
+- All credentials via environment variables — never hardcode
+- AV device credentials in Secrets Manager only — never logged
+- `enable_auth = true` in staging/prod enforces Cognito JWT on all routes
+- **Never push control system changes to live rooms during business hours (08:00–18:00 local) without explicit approval**
+
+## Git Conventions
+
+```
+Branch:   feature/<ticket>-description  |  fix/<ticket>-description
+          device/<ticket>-model-action  |  chore/<ticket>-description
+
+Commit:   feat|fix|chore|docs|test|refactor|device|firmware(<scope>): <summary>
+```
