@@ -1,0 +1,284 @@
+domains:
+  - id: device_health
+    name: "Device Health & Reliability"
+    questions:
+      - id: dh_01
+        text: "Is there a complete, up-to-date AV device inventory/asset register?"
+        guidance: >
+          Look for a spreadsheet, CMDB, or asset management system that includes:
+          device model, serial number, IP address, firmware version, physical location,
+          and last-verified date. Crestron XiO Cloud or Q-SYS Reflect are good examples
+          of vendor-managed inventories. Ask when it was last audited.
+        weight: 2
+        score_options:
+          0: "No inventory exists or it is severely outdated (>1 year old)"
+          1: "Partial inventory — some devices missing or key fields (IP, firmware) are absent"
+          2: "Complete inventory with model, serial, IP, firmware, location, and last-verified date"
+
+      - id: dh_02
+        text: "What percentage of AV devices are actively monitored for online/offline status?"
+        guidance: >
+          Check for SNMP monitoring (PRTG, Nagios, Zabbix), vendor dashboards
+          (Crestron XiO, Q-SYS Reflect, Logitech Sync), or custom scripts.
+          Ask: 'How do you know when a device goes offline?' If the answer is
+          'a user calls us', monitoring is absent.
+        weight: 2
+        score_options:
+          0: "No monitoring — device faults are only discovered via user complaints"
+          1: "< 70% of devices monitored, or monitoring is manual/periodic (weekly checks)"
+          2: "> 70% of devices have automated, real-time monitoring with alerting to on-call"
+
+      - id: dh_03
+        text: "Is there a defined process for tracking and applying firmware updates?"
+        guidance: >
+          Ask for a firmware audit log, change records showing firmware versions before/after,
+          or a fleet management tool. Crestron XiO, Q-SYS Reflect, and Extron GlobalViewer
+          all support remote firmware management. Look for a cadence: quarterly, semi-annual.
+          Ask if they know the current firmware for their top 5 device models.
+        weight: 2
+        score_options:
+          0: "No firmware tracking — updates applied ad-hoc or not at all"
+          1: "Some tracking exists but no regular cadence or device coverage is incomplete"
+          2: "Firmware audit runs on a defined schedule; all devices tracked against latest known versions"
+
+      - id: dh_04
+        text: "Are end-of-life (EOL) devices identified and a replacement plan in place?"
+        guidance: >
+          Look for EOL/EOS flags in the asset register and capital planning documents.
+          Check vendor EOL announcements (Crestron, Extron, QSC all publish EOL notices).
+          Ask: 'Do you have any devices that are no longer receiving security patches?'
+          Ask about budget allocation for AV refresh cycles.
+        weight: 1
+        score_options:
+          0: "EOL devices are not tracked; no replacement planning exists"
+          1: "Some EOL awareness exists but no formal replacement roadmap or budget"
+          2: "EOL devices flagged in asset register with replacement timelines documented and budgeted"
+
+      - id: dh_05
+        text: "Is there historical uptime/fault data with measured Mean Time to Resolution (MTTR)?"
+        guidance: >
+          Check the ticketing system for AV-related tickets. Look at: average resolution time,
+          recurring faults on the same devices, and repeat caller patterns.
+          Ask: 'What was your worst AV outage in the last 6 months and how long did it take to fix?'
+          MTTR under 4 hours for critical rooms is a good benchmark.
+        weight: 1
+        score_options:
+          0: "No fault history or MTTR data captured — no ticketing or incidents not logged"
+          1: "Tickets are logged but MTTR is not measured, reported, or used to improve processes"
+          2: "MTTR is tracked per device category, reported to leadership, and drives process improvements"
+
+      - id: dh_06
+        text: "Are control system programs backed up and version-controlled?"
+        guidance: >
+          Ask to see where Crestron, Q-SYS, AMX, or Extron programs are stored.
+          Programs should NOT only exist on the device itself — if the device fails,
+          you lose the program. Look for: Git/SVN repo, network share with versioned folders,
+          or a vendor platform backup. Ask: 'If this control processor died today, how long
+          to restore the room?'
+        weight: 2
+        score_options:
+          0: "No backups — programs only exist on the physical devices"
+          1: "Ad-hoc backups exist (USB drives, unversioned network share) but not systematically maintained"
+          2: "All control programs in version control with change history and a tested restore procedure"
+
+  - id: operations_maturity
+    name: "Operations & Process Maturity"
+    questions:
+      - id: om_01
+        text: "Do Standard Operating Procedures (SOPs) exist for routine AV tasks?"
+        guidance: >
+          Ask to see written SOPs for: daily room check procedure, device reboot steps,
+          user AV support, event setup/teardown, and escalation path.
+          Check if they are accessible to all team members (wiki, SharePoint, etc.).
+          Ask: 'If a new tech joined tomorrow, what documentation would they use?'
+          Note if SOPs have a 'last reviewed' date.
+        weight: 2
+        score_options:
+          0: "No written SOPs — all knowledge is tribal/verbal only"
+          1: "Some SOPs exist but are incomplete, outdated (>2 years), or not consistently followed"
+          2: "Comprehensive SOPs exist, reviewed annually, accessible to all team members, and actively used"
+
+      - id: om_02
+        text: "Is there a ticketing system in use for all AV support requests and incidents?"
+        guidance: >
+          Look for ServiceNow, Jira Service Management, Zendesk, Freshservice, or similar.
+          Verify AV has its own queue/category — not being lumped into general IT.
+          Check if users know how to submit AV tickets vs. calling/emailing the tech directly.
+          Ask to see ticket volume and open ticket aging report.
+        weight: 2
+        score_options:
+          0: "No ticketing — all requests handled via email, Teams/Slack messages, or verbal"
+          1: "Ticketing system exists but AV team usage is inconsistent — some requests bypass it"
+          2: "All AV requests and incidents logged in ticketing with SLA tracking and reporting"
+
+      - id: om_03
+        text: "Is there a formal change management process for AV system modifications?"
+        guidance: >
+          Look for: change request forms, approval workflows, and maintenance window scheduling.
+          Per CLAUDE.md: no control system changes to live rooms during business hours (8am–6pm)
+          without explicit approval. Ask: 'What happens when you need to update a program in a
+          conference room — what is the process?' Look for a Change Advisory Board (CAB) or
+          IT change control integration.
+        weight: 2
+        score_options:
+          0: "Changes made ad-hoc with no approval process or documentation"
+          1: "Informal approval (verbal or email) but no structured change control or rollback plan"
+          2: "Formal change request process with documented approval, testing, rollback plan, and maintenance window"
+
+      - id: om_04
+        text: "Is there a scheduled preventive maintenance (PM) program for AV equipment?"
+        guidance: >
+          Ask for a PM schedule and completed PM checklists. Good PM programs include:
+          quarterly lamp/filter checks, firmware review, cable inspection, DSP gain structure verification,
+          and control system test. Ask: 'When was the last time you did a full room walkthrough
+          proactively — not in response to a complaint?' Records should be retained for at least 1 year.
+        weight: 2
+        score_options:
+          0: "No PM program — all maintenance is reactive (fix it when it breaks)"
+          1: "Some PM activities occur but not on a defined schedule or not fully documented"
+          2: "Quarterly or semi-annual PM schedule with completed checklists and records retained for audit"
+
+      - id: om_05
+        text: "Is there a documented incident response runbook for critical AV failures?"
+        guidance: >
+          Look for runbooks covering the most common critical scenarios:
+          video conferencing system down during a meeting, audio failure in an event space,
+          display/projector failure, control system crash, and network/AVoIP outage.
+          Each runbook should include: symptoms, first response steps, escalation path,
+          and manual override procedure. Ask: 'What do you do if the Crestron goes offline at 8am?'
+        weight: 1
+        score_options:
+          0: "No runbooks — staff improvise during incidents and knowledge is held by specific individuals"
+          1: "Some informal guidance exists (chat messages, emails) but not formal documented runbooks"
+          2: "Runbooks exist for all critical failure scenarios with clear escalation paths and manual overrides"
+
+      - id: om_06
+        text: "Does the team have visibility into AV system usage and room utilization data?"
+        guidance: >
+          Check for analytics from: MTR Admin Center, Zoom Admin Portal, Cisco Control Hub,
+          room scheduling systems (EMS, Robin, Condeco), or occupancy sensors.
+          Ask: 'Do you know which rooms are over-utilized vs. underused?'
+          Ask if this data is used for staffing decisions or capital planning.
+        weight: 1
+        score_options:
+          0: "No usage data is collected or reviewed by the team"
+          1: "Some data is available in vendor portals but not regularly reviewed or acted upon"
+          2: "Utilization data reviewed monthly and used to inform staffing, capital, and room design decisions"
+
+  - id: av_infrastructure
+    name: "AV Infrastructure"
+    questions:
+      - id: ai_01
+        text: "Are AV devices properly segmented on a dedicated AV VLAN, separate from corporate LAN?"
+        guidance: >
+          This is both a security and reliability concern. AV devices on the corporate LAN
+          are exposed to broadcast storms and IT policy changes. Verify with the network team.
+          Look for VLAN IDs assigned specifically to AV (e.g., VLAN 120 = AV).
+          Check that Crestron, DSPs, displays, and AVoIP endpoints are all on the AV VLAN.
+          Ask if there are firewall rules between AV VLAN and corporate LAN.
+        weight: 2
+        score_options:
+          0: "AV devices are on the corporate LAN or mixed across VLANs with no segmentation"
+          1: "AV VLAN exists but segmentation is incomplete — some devices remain on corporate LAN"
+          2: "All AV devices on dedicated AV VLAN with documented firewall rules and managed exceptions"
+
+      - id: ai_02
+        text: "Is the Dante/AES67 audio network managed and locked in Dante Controller?"
+        guidance: >
+          Open Dante Controller and check: are routes locked? Locked routes (shown in Dante
+          Controller as a padlock icon) prevent accidental changes. Ask: 'What happens if
+          someone opens Dante Controller on a laptop that's on the AV network?'
+          Look for a Dante network topology diagram. Check if Dante Domain Manager is in use
+          for larger deployments. AES67 interoperability should also be verified if mixed vendors.
+        weight: 2
+        score_options:
+          0: "Dante is in use but routing is not locked — anyone on the network can change audio routes"
+          1: "Dante used but not locked or regularly audited after changes"
+          2: "Dante network locked in Dante Controller, documented routing diagram exists, audited after changes"
+
+      - id: ai_03
+        text: "Is there documented signal path mapping for all major AV systems?"
+        guidance: >
+          Signal path documentation shows: source → input on switcher → output → display/speaker.
+          Also called as-built drawings or signal flow diagrams. Look in: SharePoint, AutoCAD files,
+          Visio diagrams, or AVoIP management software. Ask: 'If I asked you to trace the signal
+          from the laptop to the far-end display in this room, do you have a diagram for that?'
+          These are critical for troubleshooting.
+        weight: 1
+        score_options:
+          0: "No signal path documentation exists anywhere"
+          1: "Some rooms have documentation but it is incomplete or not kept up to date after changes"
+          2: "All major AV systems have current, as-built signal path diagrams accessible to the team"
+
+      - id: ai_04
+        text: "Do all critical AV systems have a documented manual override procedure?"
+        guidance: >
+          If the control system (Crestron, AMX, Q-SYS) fails, can staff and users still operate
+          the room? Look for laminated quick-reference cards posted in rooms, or guides in the
+          AV team knowledge base. Manual override typically means: knowing which physical inputs
+          on the switcher to use, how to power on displays directly, and how to mute/unmute DSP
+          without the touch panel. This is a CLAUDE.md-required constraint for all critical systems.
+        weight: 2
+        score_options:
+          0: "No manual override procedures exist — room is unusable when control system fails"
+          1: "Override is technically possible but not documented or communicated to support staff/users"
+          2: "Manual override documented, tested, and accessible in-room or in team knowledge base"
+
+      - id: ai_05
+        text: "Is AVoIP infrastructure (NVX, NAV, ZeeVee, Lightware, etc.) monitored and documented?"
+        guidance: >
+          AVoIP adds complexity — encoder/decoder pairs, multicast routing, IGMP snooping,
+          and switch configuration are all interdependent. Ask:
+          'Do you have a current list of all encoders and decoders with their IP addresses and streams?'
+          Check if the AVoIP management platform (Crestron DM NVX Director, Extron NAV Configurator)
+          is in use and up to date. Verify that managed switches have IGMP snooping enabled.
+        weight: 1
+        score_options:
+          0: "AVoIP infrastructure is undocumented and not monitored"
+          1: "Partial documentation or monitoring exists but coverage is incomplete"
+          2: "Full AVoIP inventory documented, VLAN and multicast config recorded, health monitoring active"
+
+  - id: security_compliance
+    name: "Security & Compliance"
+    questions:
+      - id: sc_01
+        text: "Have default credentials been changed on all AV devices?"
+        guidance: >
+          Spot-check by attempting to log into 2-3 devices with known default credentials:
+          Crestron (admin/admin), Biamp (admin/password), QSC (admin/[blank]), Extron (admin/extron).
+          Ask for the team's credential change policy. Look for evidence that credentials were
+          changed during device commissioning. This is one of the most common AV security failures
+          found in enterprise environments.
+        weight: 2
+        score_options:
+          0: "Default credentials confirmed on devices, or no policy exists requiring credential changes"
+          1: "Policy exists but is not consistently enforced or verified during device onboarding"
+          2: "All devices have unique credentials, stored in a password manager, and audited at least annually"
+
+      - id: sc_02
+        text: "Are AV device credentials stored securely (not in spreadsheets or shared documents)?"
+        guidance: >
+          Look for: 1Password, Bitwarden, CyberArk, HashiCorp Vault, or IT-managed secret store.
+          Red flags: shared Excel file with passwords, credentials in a Teams channel, sticky notes
+          in the AV rack, or passwords stored in plain-text config files committed to a shared drive.
+          Per CLAUDE.md: AV device credentials must use environment variables — never hardcoded.
+          Check if there is role-based access control on the credential store.
+        weight: 2
+        score_options:
+          0: "Credentials stored in plain-text files, spreadsheets, email, or shared documents"
+          1: "Some use of secure storage but credential hygiene is inconsistent across the team"
+          2: "All credentials in a team-accessible password manager with access controls and audit logs"
+
+      - id: sc_03
+        text: "Is remote access to AV devices controlled and logged (VPN, jump host, or similar)?"
+        guidance: >
+          Direct internet exposure of AV devices is a critical vulnerability. Many AV devices
+          have known CVEs against their web interfaces (Crestron, AMX, Extron all have had public CVEs).
+          Ask: 'How do you remotely access a device when you are off-site?' The answer should
+          involve VPN or a jump host — not direct port forwarding. Check if remote access sessions
+          are logged and if logs are reviewed.
+        weight: 2
+        score_options:
+          0: "AV devices are directly internet-accessible, or remote access is uncontrolled and unlogged"
+          1: "VPN is required but remote access sessions are not logged or the logs are not reviewed"
+          2: "Remote access via VPN or jump host, access logged, logs reviewed periodically, access revoked promptly when staff leave"
