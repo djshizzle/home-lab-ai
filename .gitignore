@@ -11,12 +11,16 @@
 !.claude/workspace/**/.gitkeep
 
 # Common project ignores — ADD YOUR PROJECT'S ENTRIES BELOW
-# [CUSTOMIZE] e.g., for Python:
-# __pycache__/
-# *.pyc
-# .venv/
-# dist/
-# *.egg-info/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+dist/
+*.egg-info/
+
+# Assessment tool generated reports (runtime output, not source)
+reports/
 
 # [CUSTOMIZE] e.g., for Node.js:
 # node_modules/
