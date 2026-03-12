@@ -101,6 +101,18 @@ See the full guide: → [AGENT-TEAM-SETUP.md](./AGENT-TEAM-SETUP.md)
 | Room AV integration | `workflows/room-integration.md` |
 | Incident response | `workflows/incident-response.md` |
 | Code review | `workflows/code-review.md` |
+| Multi-LLM design consensus | `workflows/llm-council-query.md` |
+
+---
+
+## Plugins
+
+External tools and service integrations are documented in the `plugins/` directory.
+See → [plugins/README.md](./plugins/README.md) for the plugin registry.
+
+| Plugin | Purpose | Workflow |
+|--------|---------|---------|
+| [llm-council](./plugins/llm-council/plugin.md) | Multi-LLM consensus for complex AV design decisions | `workflows/llm-council-query.md` |
 
 ---
 
