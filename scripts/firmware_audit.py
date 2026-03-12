@@ -11,18 +11,9 @@ import json
 import sys
 from pathlib import Path
 
+from packaging.version import Version, InvalidVersion
 
-# Minimum recommended firmware versions by device model
-# Update these as vendors release new firmware
-FIRMWARE_BASELINE: dict[str, str] = {
-    "crestron-cp4": "4.0.0",
-    "qsc-core-110f": "9.10.0",
-    "biamp-tesira": "4.7.0",
-    "poly-studio-x": "4.1.0",
-    "cisco-board": "11.0.0",
-    "extron-xtp": "6.08.0006",
-    "crestron-nvx": "1.10.000",
-}
+from avops.constants.devices import FIRMWARE_BASELINE
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,7 +44,10 @@ def audit_device(device: dict) -> dict:
 
     status = "unknown"
     if baseline and current != "unknown":
-        status = "ok" if current >= baseline else "outdated"
+        try:
+            status = "ok" if Version(current) >= Version(baseline) else "outdated"
+        except InvalidVersion:
+            status = "unknown"
     elif not baseline:
         status = "no-baseline"
 
@@ -80,12 +74,20 @@ def main() -> int:
         return 0
 
     results = [audit_device(d) for d in devices]
-    outdated = [r for r in results if r["status"] == "outdated"]
+
+    # Single pass to count statuses
+    ok_count = 0
+    outdated: list[dict] = []
+    for r in results:
+        if r["status"] == "ok":
+            ok_count += 1
+        elif r["status"] == "outdated":
+            outdated.append(r)
 
     report = {
         "total_devices": len(results),
         "outdated": len(outdated),
-        "ok": len([r for r in results if r["status"] == "ok"]),
+        "ok": ok_count,
         "devices": results,
     }
 
@@ -98,7 +100,10 @@ def main() -> int:
     if outdated:
         print(f"\n[audit] WARNING: {len(outdated)} devices have outdated firmware")
         for d in outdated:
-            print(f"  - {d['device_id']} ({d['model']}): {d['current_firmware']} < {d['required_firmware']}")
+            print(
+                f"  - {d['device_id']} ({d['model']}): "
+                f"{d['current_firmware']} < {d['required_firmware']}"
+            )
         return 1
 
     print(f"[audit] All {len(results)} devices meet firmware baseline")

@@ -36,11 +36,12 @@ def main() -> int:
         print("No devices configured. Add devices to DEVICES list or connect to AVops API.")
         return 0
 
-    print(f"Pinging {len(DEVICES)} devices...\n")
+    total = len(DEVICES)
+    print(f"Pinging {total} devices...\n")
     unreachable = []
 
     with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = {executor.submit(ping, d): d for d in DEVICES}
+        futures = [executor.submit(ping, d) for d in DEVICES]
         for future in as_completed(futures):
             result = future.result()
             status = "OK" if result["reachable"] else "UNREACHABLE"
@@ -48,7 +49,7 @@ def main() -> int:
             if not result["reachable"]:
                 unreachable.append(result["device_id"])
 
-    print(f"\nSummary: {len(DEVICES) - len(unreachable)}/{len(DEVICES)} reachable")
+    print(f"\nSummary: {total - len(unreachable)}/{total} reachable")
     if unreachable:
         print(f"Unreachable: {', '.join(unreachable)}")
         return 1

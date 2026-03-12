@@ -80,3 +80,15 @@ DEVICE_CATEGORIES = {
 RATE_LIMIT_CRESTRON = 60
 RATE_LIMIT_QSC = 30
 RATE_LIMIT_DEFAULT = 20
+
+# ─── Firmware Baselines (minimum acceptable version by model) ────────────────
+
+FIRMWARE_BASELINE: dict[str, str] = {
+    CTRL_CRESTRON_CP4: "4.0.0",
+    CTRL_QSC_CORE110F: "9.10.0",
+    DSP_BIAMP_TESIRA: "4.7.0",
+    VC_POLY_STUDIO_X: "4.1.0",
+    VC_CISCO_BOARD: "11.0.0",
+    SW_EXTRON_XTP: "6.08.0006",
+    AVOIP_CRESTRON_NVX: "1.10.000",
+}

@@ -4,8 +4,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from avops.main import app
+from avops.routers import devices as devices_module
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_devices():
+    """Clear the in-memory device store before each test."""
+    devices_module._devices.clear()
+    yield
+    devices_module._devices.clear()
 
 
 def test_root():
@@ -39,13 +48,10 @@ def test_register_and_get_device():
         "firmware_version": "4.0.0",
         "online": True,
     }
-    # Register
     response = client.post("/devices", json=device_payload)
     assert response.status_code == 201
-    data = response.json()
-    assert data["device_id"] == "hq-conf3b-ctrl-01"
+    assert response.json()["device_id"] == "hq-conf3b-ctrl-01"
 
-    # Fetch
     response = client.get("/devices/hq-conf3b-ctrl-01")
     assert response.status_code == 200
     assert response.json()["model"] == "crestron-cp4"
@@ -70,8 +76,32 @@ def test_get_device_not_found():
 
 
 def test_list_devices_by_category():
+    # Register one ctrl and one dsp device
+    for payload in [
+        {
+            "device_id": "hq-conf1a-ctrl-01",
+            "hostname": "av-hq-conf1a-ctrl-1.internal",
+            "model": "crestron-cp4",
+            "category": "ctrl",
+            "room_id": "hq-1a",
+            "ip_address": "10.10.1.11",
+        },
+        {
+            "device_id": "hq-conf1a-dsp-01",
+            "hostname": "av-hq-conf1a-dsp-1.internal",
+            "model": "biamp-tesira",
+            "category": "dsp",
+            "room_id": "hq-1a",
+            "ip_address": "10.10.1.21",
+        },
+    ]:
+        client.post("/devices", json=payload)
+
     response = client.get("/devices?category=ctrl")
     assert response.status_code == 200
+    results = response.json()
+    assert len(results) == 1
+    assert results[0]["category"] == "ctrl"
 
 
 def test_list_devices_invalid_category():
@@ -80,7 +110,6 @@ def test_list_devices_invalid_category():
 
 
 def test_remove_device():
-    # Register first
     device_payload = {
         "device_id": "hq-conf1a-dsp-01",
         "hostname": "av-hq-conf1a-dsp-1.internal",
@@ -91,10 +120,8 @@ def test_remove_device():
     }
     client.post("/devices", json=device_payload)
 
-    # Delete
     response = client.delete("/devices/hq-conf1a-dsp-01")
     assert response.status_code == 204
 
-    # Confirm gone
     response = client.get("/devices/hq-conf1a-dsp-01")
     assert response.status_code == 404
