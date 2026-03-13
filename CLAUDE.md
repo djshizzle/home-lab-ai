@@ -212,6 +212,68 @@ BROADCAST_STUDIO →  SDI/NDI production, streaming encoder, intercom
 
 ---
 
+## MCP Code Execution
+
+This project implements Anthropic's **"Code Execution with MCP"** pattern to reduce
+token overhead from ~30K tokens to ~200 tokens when working with MCP tools.
+
+### How It Works
+
+Instead of loading all MCP tool schemas into the agent context, tools are exposed as
+**filesystem-based Python APIs** in the `servers/` directory. The agent writes code
+that imports and calls these wrappers, and execution happens in a sandboxed container
+via the `mcp-server-code-execution-mode` MCP server.
+
+```
+servers/                    # Filesystem-based MCP API wrappers
+├── __init__.py             # Discovery: list_servers(), list_tools(), get_tool_docs()
+├── _registry.py            # Progressive tool discovery helpers
+├── example_server/         # One sub-package per MCP server
+│   ├── __init__.py
+│   ├── ping_device.py      # Thin wrapper per tool
+│   └── get_device_info.py
+└── <your_server>/          # Add new servers here
+
+skills/                     # Persistent reusable agent code
+├── __init__.py
+├── device_health_check.py  # Example: batch device ping + report
+└── <your_skill>.py         # Save working code for future imports
+```
+
+### Quick Commands
+
+```bash
+# Generate wrappers from MCP tool schemas
+generate-wrappers: python scripts/generate_server_wrappers.py --schema-file schemas.json
+
+# Dry-run (preview without writing)
+generate-wrappers-dry: python scripts/generate_server_wrappers.py --schema-file schemas.json --dry-run
+```
+
+### Agent Usage
+
+When working in the code-execution sandbox, agents should:
+
+1. **Discover** available servers: `from servers import list_servers`
+2. **Load** only needed tool docs: `get_tool_docs("device_manager", "ping_device")`
+3. **Write code** that imports and calls wrappers (data stays in sandbox)
+4. **Save skills** for reuse: working code goes in `skills/`
+
+### Prerequisites
+
+- **Podman** or **Docker** installed (for rootless container sandbox)
+- **uv** package manager (`pip install uv`)
+- MCP server configured in `.mcp.json` (already set up)
+
+### Adding New MCP Servers
+
+1. Add the server to `.mcp.json`
+2. Export tool schemas: `{server_name: [{name, description, inputSchema}]}`
+3. Run: `python scripts/generate_server_wrappers.py --schema-file schemas.json`
+4. Wrappers appear in `servers/<server_name>/`
+
+---
+
 ## Agent Workspace
 
 Hand-off files between agents are stored in `.agent-workspace/` (gitignored).

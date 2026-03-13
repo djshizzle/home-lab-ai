@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "code-execution": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/elusznik/mcp-server-code-execution-mode",
+        "mcp-server-code-execution-mode",
+        "run"
+      ],
+      "env": {
+        "MCP_BRIDGE_RUNTIME": "${MCP_BRIDGE_RUNTIME:-podman}",
+        "MCP_BRIDGE_TIMEOUT": "30",
+        "MCP_BRIDGE_OUTPUT_MODE": "compact"
+      }
+    }
+  }
+}

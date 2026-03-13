@@ -28,6 +28,16 @@
 # bin/
 # *.exe
 
+# Python
+__pycache__/
+*.pyc
+.venv/
+dist/
+*.egg-info/
+
+# MCP code execution — sandbox runtime artifacts
+.mcp-cache/
+
 # Never commit secrets
 .env
 .env.*

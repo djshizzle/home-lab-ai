@@ -8,7 +8,9 @@
       "Bash(git grep *)",
       "Bash(ls *)",
       "Bash(find * -not -name '*.env')",
-      "Read(*)"
+      "Bash(python scripts/generate_server_wrappers.py *)",
+      "Read(*)",
+      "mcp__code-execution__run_python"
     ],
     "deny": [
       "Bash(rm -rf *)",
@@ -18,5 +20,6 @@
       "Bash(curl * | sh)",
       "Bash(chmod 777 *)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
