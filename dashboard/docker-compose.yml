@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  server:
+    build: ./server
+    ports:
+      - "${DASHBOARD_PORT:-3001}:3001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./server/hosts.json:/app/hosts.json
+    environment:
+      - PORT=3001
+    restart: unless-stopped
+    network_mode: host
+
+  client:
+    build: ./client
+    ports:
+      - "${CLIENT_PORT:-3000}:80"
+    depends_on:
+      - server
+    restart: unless-stopped
