@@ -18,11 +18,10 @@
 # dist/
 # *.egg-info/
 
-# [CUSTOMIZE] e.g., for Node.js:
-# node_modules/
-# dist/
-# .env
-# .env.local
+# Node.js
+node_modules/
+dist/
+.env.local
 
 # [CUSTOMIZE] e.g., for Go:
 # bin/
