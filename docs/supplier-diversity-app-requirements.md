@@ -42,14 +42,19 @@ for contracts that require MBE/WBE/DBE (and other) participation goals.
 | Bulk import | Import transactions from Excel/CSV |
 | Edit & delete | Correct or remove logged transactions with audit trail |
 | Recurring spend | Optional: flag recurring/scheduled payments |
+| **Procore import** | Import spend/cost data exported from Procore (CSV/Excel). Map Procore fields (Commitment, Cost Code, Vendor, Amount) to app fields. Supports Procore Budget Detail, Commitment, and Direct Cost export formats |
+| Procore field mapping | Pre-built mapping templates for common Procore export formats; user can customize and save mappings |
 
-### 2.3 Project Management
+### 2.3 Project / Contract Management
 
 | Feature | Description |
 |---------|-------------|
-| Project setup | Name, contract value, start/end dates, description |
-| Per-project goals | Set target % for each certification type (e.g., 15% MBE, 5% WBE) |
-| Goal vs. actual tracking | Live progress bars showing spend-to-date vs. target per cert |
+| Project setup | Name, contract value, start/end dates, description, contract number |
+| **Custom goal setting per contract** | Each contract can define its own unique diversity goals — set target % **and/or dollar amount** for each certification type (e.g., Contract A: 15% MBE + 5% WBE; Contract B: 25% MBE + 10% SBE + $500K WBE minimum) |
+| Goal types | Support **percentage-based** goals (% of contract value), **dollar-based** goals (fixed $ amount), or **both** simultaneously per cert type |
+| Goal templates | Save frequently-used goal configurations as templates (e.g., "City of X Standard", "Federal DBE") and apply them to new contracts with one click |
+| Goal vs. actual tracking | Live progress bars showing spend-to-date vs. target per cert, with color coding (green ≥100%, yellow 75-99%, red <75%) |
+| Contract-level reporting | Each contract shows its own diversity scorecard with goal attainment |
 | Multi-project roll-up | Company-wide aggregate view across all active projects |
 | Project status | Active, Completed, Archived |
 
@@ -104,6 +109,8 @@ This is a **critical** requirement — the user has an existing Excel database.
 | Excel export | Export any report, supplier list, or transaction log to `.xlsx` |
 | Template download | Provide blank Excel templates matching expected import format |
 | Sync workflow | Re-import updated Excel files; match on supplier name or ID to update existing records |
+| **Procore integration** | Import Procore cost exports (CSV/Excel) with pre-built field mappings for Budget Detail, Commitments, and Direct Costs |
+| Procore mapping templates | Pre-configured column mappings for standard Procore export formats; editable by user |
 
 ---
 
@@ -165,10 +172,12 @@ This is a **critical** requirement — the user has an existing Excel database.
 ├── Spend Tracking
 │   ├── Log Entry      (add transaction form)
 │   ├── Transaction List (searchable, filterable table)
-│   └── Import         (Excel upload + column mapping)
+│   ├── Import         (Excel/CSV upload + column mapping)
+│   └── Procore Import (Procore-specific import with pre-built mappings)
 ├── Projects
 │   ├── List           (all projects with goal status)
-│   └── Detail         (project goals, spend breakdown, progress)
+│   ├── Detail         (project goals, spend breakdown, progress)
+│   └── Goal Setup     (custom goal setting per contract — %, $, or both)
 ├── Reports
 │   ├── Compliance     (goal vs. actual, exportable)
 │   ├── Spend Analysis (by tier, cert, project, period)
