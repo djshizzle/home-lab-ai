@@ -9,6 +9,7 @@
 # Keep the directory structure and state template
 !.claude/workspace/AGENT_STATE.md
 !.claude/workspace/**/.gitkeep
+.claude/workspace/FILE_CATALOG.md
 
 # Common project ignores — ADD YOUR PROJECT'S ENTRIES BELOW
 # [CUSTOMIZE] e.g., for Python:
